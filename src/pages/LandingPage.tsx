@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Users, Lock, Share2, Tree } from "lucide-react";
+import { ArrowRight, Users, Lock, Share2, Trees } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -99,7 +99,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-garbh-green/10 rounded-xl p-6 border border-garbh-green/20 animate-fade-in">
               <div className="w-12 h-12 bg-garbh-green/20 rounded-full flex items-center justify-center mb-4">
-                <Tree className="h-6 w-6 text-primary" />
+                <Trees className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Beautiful Visualizations</h3>
               <p className="text-muted-foreground">
