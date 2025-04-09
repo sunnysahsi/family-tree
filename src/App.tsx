@@ -11,6 +11,7 @@ import LandingPage from "@/pages/LandingPage";
 import Dashboard from "@/pages/dashboard";
 import TreeView from "@/pages/TreeView";
 import NotFound from "@/pages/NotFound";
+import ProfileEdit from "@/pages/ProfileEdit";
 import { AuthProvider } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();

@@ -152,22 +152,22 @@ const TreeView = ({ isEditMode = false }: TreeViewProps) => {
     deleteMemberMutation.mutate(memberId);
   };
 
-  const handleFormSubmit = (memberData: Partial<FamilyMember>) => {
+  const handleFormSubmit = async (memberData: Partial<FamilyMember>) => {
     if (selectedMember) {
-      updateMemberMutation.mutate({
+      await updateMemberMutation.mutateAsync({
         id: selectedMember.id,
         member: memberData,
       });
     } else if (id) {
-      addMemberMutation.mutate({
+      await addMemberMutation.mutateAsync({
         ...memberData as Omit<FamilyMember, 'id'>,
         treeId: id,
       });
     }
   };
 
-  const handleTreeUpdate = (values: any) => {
-    updateTreeMutation.mutate(values);
+  const handleTreeUpdate = async (values: any) => {
+    await updateTreeMutation.mutateAsync(values);
   };
 
   const isLoading = isTreeLoading || isMembersLoading;

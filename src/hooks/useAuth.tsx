@@ -1,15 +1,13 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@/types/User';
-import { userApi } from '@/services/api';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { User } from "@/types/User";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -17,128 +15,135 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Use React Query to fetch current user
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      // Check local storage first
-      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-      if (!isLoggedIn) {
-        return null;
-      }
-      
-      const response = await userApi.getCurrentUser();
-      if (response.status === 'error' || !response.data) {
-        localStorage.removeItem('isLoggedIn');
-        return null;
-      }
-      
-      return response.data;
-    },
-    // Don't auto fetch on mount - we'll handle this ourselves
-    enabled: false,
-  });
-
-  const loginMutation = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const response = await userApi.login(email, password);
-      if (response.status === 'error' || !response.data) {
-        throw new Error(response.error || 'Login failed');
-      }
-      return response.data;
-    },
-    onSuccess: (data) => {
-      localStorage.setItem('isLoggedIn', 'true');
-      queryClient.setQueryData(['currentUser'], data);
-      toast({
-        title: 'Logged in successfully!',
-        description: 'Welcome back to Garbh.',
-      });
-      navigate('/dashboard');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Login failed',
-        description: error instanceof Error ? error.message : 'An error occurred while logging in',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const signupMutation = useMutation({
-    mutationFn: async ({ name, email, password }: { name: string; email: string; password: string }) => {
-      const response = await userApi.signup(name, email, password);
-      if (response.status === 'error' || !response.data) {
-        throw new Error(response.error || 'Signup failed');
-      }
-      return response.data;
-    },
-    onSuccess: (data) => {
-      localStorage.setItem('isLoggedIn', 'true');
-      queryClient.setQueryData(['currentUser'], data);
-      toast({
-        title: 'Account created!',
-        description: 'Welcome to Garbh. Let\'s start building your family tree.',
-      });
-      navigate('/dashboard');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Signup failed',
-        description: error instanceof Error ? error.message : 'An error occurred during signup',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Call refetch whenever we mount this provider
+  // Check for existing session on mount
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    const checkAuth = async () => {
+      try {
+        // In a real app, this would be an API call to verify the token
+        // For demo purposes, we'll check localStorage
+        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+        
+        if (isLoggedIn) {
+          // Mock user data
+          setUser({
+            id: "user1",
+            name: "Demo User",
+            email: "user@example.com",
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const login = async (email: string, password: string) => {
-    await loginMutation.mutateAsync({ email, password });
+    setIsLoading(true);
+    try {
+      // In a real app, this would be an API call
+      // For demo purposes, we'll simulate a successful login
+      localStorage.setItem("isLoggedIn", "true");
+      
+      // Mock user data
+      setUser({
+        id: "user1",
+        name: "Demo User",
+        email,
+        createdAt: new Date().toISOString(),
+      });
+      
+      toast({
+        title: "Logged in successfully!",
+        description: "Welcome back to Garbh."
+      });
+      
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Please check your credentials and try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    await signupMutation.mutateAsync({ name, email, password });
+    setIsLoading(true);
+    try {
+      // In a real app, this would be an API call
+      // For demo purposes, we'll simulate a successful signup
+      localStorage.setItem("isLoggedIn", "true");
+      
+      // Mock user data
+      setUser({
+        id: "user1",
+        name,
+        email,
+        createdAt: new Date().toISOString(),
+      });
+      
+      toast({
+        title: "Account created!",
+        description: "Welcome to Garbh. Let's start building your family tree."
+      });
+      
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Signup failed:", error);
+      toast({
+        title: "Signup failed",
+        description: error instanceof Error ? error.message : "Please try again with different information.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem('isLoggedIn');
-    queryClient.setQueryData(['currentUser'], null);
+    localStorage.removeItem("isLoggedIn");
+    setUser(null);
     toast({
-      title: 'Logged out',
-      description: 'You have been successfully logged out.',
+      title: "Logged out",
+      description: "You have been logged out successfully."
     });
-    navigate('/');
+    navigate("/");
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user: data || null,
-        isLoading: isLoading || loginMutation.isPending || signupMutation.isPending,
-        isAuthenticated: !!data,
+        user,
+        isAuthenticated: !!user,
+        isLoading,
         login,
         signup,
-        logout,
+        logout
       }}
     >
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
+};

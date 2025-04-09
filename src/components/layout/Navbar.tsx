@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Book,
   Menu,
@@ -25,6 +25,7 @@ const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const { isOpen, toggle, close } = useMobileMenu();
   const navigate = useNavigate();
+  const location = useLocation();
   
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

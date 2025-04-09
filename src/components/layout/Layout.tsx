@@ -9,8 +9,6 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const { logout } = useAuth();
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
