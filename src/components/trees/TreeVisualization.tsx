@@ -12,6 +12,7 @@ import {
   Edge,
   Panel,
   NodeTypes,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
@@ -125,7 +126,7 @@ const TreeVisualization = ({ members, onAddMember, onSelectMember }: TreeVisuali
         defaultEdgeOptions={{
           style: { stroke: '#B8E0F6', strokeWidth: 2 },
           markerEnd: {
-            type: 'arrowclosed',
+            type: MarkerType.ArrowClosed,
             color: '#B8E0F6',
           },
         }}
@@ -135,7 +136,8 @@ const TreeVisualization = ({ members, onAddMember, onSelectMember }: TreeVisuali
         <MiniMap
           nodeStrokeWidth={3}
           nodeColor={(node) => {
-            switch ((node.data as FamilyMember).relation) {
+            const nodeData = node.data as FamilyMember;
+            switch (nodeData.relation) {
               case 'Father':
               case 'Mother':
                 return '#A8D5BA';
