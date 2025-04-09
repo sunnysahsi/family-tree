@@ -54,6 +54,13 @@ export const userApi = {
     }),
   
   getCurrentUser: () => fetchApi<User>('/users/me'),
+  
+  // New function to update user profile
+  updateProfile: (userData: Partial<User>) =>
+    fetchApi<User>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(userData),
+    }),
 };
 
 // Family Tree API functions

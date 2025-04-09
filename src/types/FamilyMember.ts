@@ -9,6 +9,6 @@ export interface FamilyMember {
   phone?: string;
   bio?: string;
   profilePhotoUrl?: string;
-  photoAlbum?: string[];
   treeId: string;
+  memoryNotes?: string; // Personal memory notes only visible to the owner
 }

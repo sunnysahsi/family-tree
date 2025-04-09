@@ -7,5 +7,6 @@ export interface FamilyTree {
   ownerId: string;
   createdAt: string;
   updatedAt: string;
-  members?: string[]; // Member IDs
+  members?: string[];
+  memoryNotes?: string; // Personal memory notes for the tree owner
 }

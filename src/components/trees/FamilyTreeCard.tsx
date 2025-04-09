@@ -1,9 +1,8 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Lock, Globe, MoreVertical } from "lucide-react";
+import { Users, Lock, Globe, MoreVertical, Edit, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FamilyTree } from "@/types/FamilyTree";
+import { useRouter } from "next/router";
 
 interface FamilyTreeCardProps {
   tree: FamilyTree;
@@ -19,32 +19,26 @@ interface FamilyTreeCardProps {
 }
 
 const FamilyTreeCard = ({ tree, onDelete }: FamilyTreeCardProps) => {
-  const navigate = useNavigate();
-  const [isDeleting, setIsDeleting] = useState(false);
-
+  const router = useRouter();
+  
   const handleView = () => {
-    navigate(`/tree/${tree.id}`);
+    router.push(`/tree/${tree.id}`);
   };
 
   const handleEdit = () => {
-    navigate(`/tree/${tree.id}/edit`);
+    router.push(`/tree/${tree.id}/edit`);
   };
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this family tree? This action cannot be undone.")) {
-      setIsDeleting(true);
-      try {
-        await onDelete(tree.id);
-      } finally {
-        setIsDeleting(false);
-      }
+      await onDelete(tree.id);
     }
   };
 
   const membersCount = tree.members?.length || 0;
 
   return (
-    <Card className="h-full flex flex-col animate-fade-in hover:shadow-md transition-shadow">
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -59,9 +53,13 @@ const FamilyTreeCard = ({ tree, onDelete }: FamilyTreeCardProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleView}>View</DropdownMenuItem>
-              <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                <Trash className="h-4 w-4 mr-2" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -86,9 +84,18 @@ const FamilyTreeCard = ({ tree, onDelete }: FamilyTreeCardProps) => {
             </>
           )}
         </div>
+        {tree.memoryNotes && (
+          <div className="mt-3 p-2 bg-secondary/20 rounded-md text-xs text-muted-foreground">
+            <strong>Memory Notes:</strong> {tree.memoryNotes.substring(0, 60)}
+            {tree.memoryNotes.length > 60 ? "..." : ""}
+          </div>
+        )}
       </CardContent>
-      <CardFooter className="border-t pt-4">
-        <Button onClick={handleView} className="w-full">View Tree</Button>
+      <CardFooter className="border-t pt-4 flex gap-2">
+        <Button onClick={handleView} className="flex-1">View</Button>
+        <Button onClick={handleEdit} variant="outline" size="icon">
+          <Edit className="h-4 w-4" />
+        </Button>
       </CardFooter>
     </Card>
   );

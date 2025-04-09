@@ -1,4 +1,3 @@
-
 import { useRouter } from 'next/router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -7,6 +6,8 @@ import Layout from '@/components/layout/Layout';
 import { useToast } from '@/hooks/use-toast';
 import { familyTreeApi, familyMemberApi } from '@/services/api';
 import { FamilyMember } from '@/types/FamilyMember';
+import { ArrowLeft, Edit, Users, Share2, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import TreeVisualization from '@/components/trees/TreeVisualization';
 import FamilyMemberForm from '@/components/trees/FamilyMemberForm';
 import FamilyMemberCard from '@/components/trees/FamilyMemberCard';
@@ -19,7 +20,6 @@ const TreeView: NextPageWithLayout = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
 
-  // Get tree data
   const { data: tree, isLoading: isTreeLoading } = useQuery({
     queryKey: ['familyTree', id],
     queryFn: async () => {
@@ -38,7 +38,6 @@ const TreeView: NextPageWithLayout = () => {
     enabled: !!id,
   });
 
-  // Get tree members
   const { data: members = [], isLoading: isMembersLoading } = useQuery({
     queryKey: ['treeMembers', id],
     queryFn: async () => {
@@ -52,7 +51,6 @@ const TreeView: NextPageWithLayout = () => {
     enabled: !!id,
   });
 
-  // Add member mutation
   const addMemberMutation = useMutation({
     mutationFn: (newMember: Omit<FamilyMember, 'id'>) =>
       familyMemberApi.createMember(newMember),
@@ -74,7 +72,6 @@ const TreeView: NextPageWithLayout = () => {
     },
   });
 
-  // Update member mutation
   const updateMemberMutation = useMutation({
     mutationFn: ({ id, member }: { id: string; member: Partial<FamilyMember> }) =>
       familyMemberApi.updateMember(id, member),
@@ -96,7 +93,6 @@ const TreeView: NextPageWithLayout = () => {
     },
   });
 
-  // Delete member mutation
   const deleteMemberMutation = useMutation({
     mutationFn: (memberId: string) => familyMemberApi.deleteMember(memberId),
     onSuccess: () => {
@@ -144,6 +140,10 @@ const TreeView: NextPageWithLayout = () => {
     }
   };
 
+  const handleEditTree = () => {
+    router.push(`/tree/${id}/edit`);
+  };
+
   const isLoading = isTreeLoading || isMembersLoading;
 
   if (isLoading) {
@@ -172,12 +172,43 @@ const TreeView: NextPageWithLayout = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-2">{tree.name}</h1>
-      {tree.description && (
-        <p className="text-muted-foreground mb-6">{tree.description}</p>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <div className="flex items-center mb-2">
+            <Button variant="ghost" size="sm" className="p-0 h-auto mr-2" onClick={() => router.push("/dashboard")}>
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Dashboard
+            </Button>
+            <h1 className="text-xl font-bold ml-2">{tree.name}</h1>
+          </div>
+          {tree.description && (
+            <p className="text-muted-foreground">{tree.description}</p>
+          )}
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={handleAddMember}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Member
+          </Button>
+          <Button size="sm" variant="outline">
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleEditTree}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Tree
+          </Button>
+        </div>
+      </div>
+      
+      {tree.memoryNotes && (
+        <div className="mb-6 p-4 bg-secondary/20 rounded-md">
+          <h3 className="text-sm font-semibold mb-1">Your Memory Notes</h3>
+          <p className="text-sm text-muted-foreground">{tree.memoryNotes}</p>
+        </div>
       )}
 
-      {/* Tree visualization */}
       <div className="mb-8">
         <TreeVisualization
           members={members}
@@ -186,7 +217,6 @@ const TreeView: NextPageWithLayout = () => {
         />
       </div>
 
-      {/* Family member form */}
       <FamilyMemberForm
         isOpen={isFormOpen}
         onClose={() => {
@@ -197,15 +227,27 @@ const TreeView: NextPageWithLayout = () => {
         initialData={selectedMember}
       />
 
-      {/* Selected member details */}
       {selectedMember && !isFormOpen && (
         <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-4">Selected Family Member</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Selected Family Member</h2>
+            <Button variant="outline" size="sm" onClick={() => handleEditMember(selectedMember)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Member
+            </Button>
+          </div>
           <FamilyMemberCard
             member={selectedMember}
             onEdit={() => handleEditMember(selectedMember)}
             onDelete={() => handleDeleteMember(selectedMember.id)}
           />
+          
+          {selectedMember.memoryNotes && (
+            <div className="mt-4 p-4 bg-secondary/20 rounded-md">
+              <h3 className="text-sm font-semibold mb-1">Your Memory Notes</h3>
+              <p className="text-sm text-muted-foreground">{selectedMember.memoryNotes}</p>
+            </div>
+          )}
         </div>
       )}
     </div>

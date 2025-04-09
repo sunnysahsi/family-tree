@@ -1,8 +1,16 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import {
+  Book,
+  Menu,
+  X,
+  User,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,141 +18,162 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+import { useMobileMenu } from "@/hooks/use-mobile";
 
-interface NavbarProps {
-  isLoggedIn: boolean;
-  onLogin: () => void;
-  onSignup: () => void;
-  onLogout: () => void;
-}
-
-const Navbar = ({ isLoggedIn, onLogin, onSignup, onLogout }: NavbarProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+const Navbar = () => {
+  const { user, logout, isAuthenticated } = useAuth();
+  const { isOpen, toggle, close } = useMobileMenu();
+  const router = useRouter();
+  
   return (
-    <nav className="bg-white shadow-sm border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link
-              to="/"
-              className="flex-shrink-0 flex items-center"
-            >
-              <span className="text-2xl font-bold text-primary">Garbh</span>
-              <span className="ml-2 text-sm text-muted-foreground">Family Trees</span>
-            </Link>
-          </div>
-
-          {/* Desktop menu */}
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            {isLoggedIn ? (
-              <>
-                <Link to="/dashboard">
-                  <Button variant="ghost" className="mr-3">
-                    Dashboard
-                  </Button>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 flex">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            <Book className="h-5 w-5" />
+            <span className="hidden font-bold sm:inline-block">
+              Garbh
+            </span>
+          </Link>
+          <div className="hidden md:flex">
+            {isAuthenticated && (
+              <nav className="flex items-center space-x-6 text-sm font-medium">
+                <Link
+                  href="/dashboard"
+                  className={cn(
+                    "transition-colors hover:text-foreground/80",
+                    router.pathname === "/dashboard"
+                      ? "text-foreground"
+                      : "text-foreground/60"
+                  )}
+                >
+                  Dashboard
                 </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="ml-2">
-                      <User className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onLogout} className="text-destructive">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" onClick={onLogin} className="mr-3">
-                  Log in
-                </Button>
-                <Button onClick={onSignup}>Sign up</Button>
-              </>
+              </nav>
             )}
           </div>
-
-          {/* Mobile menu button */}
-          <div className="flex items-center sm:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
-            >
-              <span className="sr-only">Open main menu</span>
-              {isOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
-          </div>
+        </div>
+        
+        <div className="flex-1"></div>
+        
+        <div className="flex items-center">
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="relative h-8 w-8 rounded-full"
+                >
+                  <User className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    {user?.name && <p className="font-medium">{user.name}</p>}
+                    {user?.email && (
+                      <p className="text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile/edit" className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Edit Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                  onClick={logout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => router.push("/login")}>
+                Log In
+              </Button>
+              <Button onClick={() => router.push("/signup")}>
+                Sign Up
+              </Button>
+            </div>
+          )}
+          
+          <Button
+            variant="ghost"
+            className="ml-2 h-8 w-8 px-0 md:hidden"
+            onClick={toggle}
+          >
+            {isOpen ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Menu className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </div>
-
+      
       {/* Mobile menu */}
       {isOpen && (
-        <div className="sm:hidden">
-          <div className="pt-2 pb-3 space-y-1">
-            {isLoggedIn ? (
+        <div className="md:hidden">
+          <div className="space-y-1 p-2">
+            {isAuthenticated ? (
               <>
                 <Link
-                  to="/dashboard"
-                  className="block px-3 py-2 text-base font-medium text-foreground hover:bg-muted"
-                  onClick={() => setIsOpen(false)}
+                  href="/dashboard"
+                  className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                  onClick={close}
                 >
                   Dashboard
                 </Link>
                 <Link
-                  to="/profile"
-                  className="block px-3 py-2 text-base font-medium text-foreground hover:bg-muted"
-                  onClick={() => setIsOpen(false)}
+                  href="/profile/edit"
+                  className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                  onClick={close}
                 >
-                  Profile
+                  Edit Profile
                 </Link>
-                <button
+                <div
+                  className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent text-destructive"
                   onClick={() => {
-                    onLogout();
-                    setIsOpen(false);
+                    logout();
+                    close();
                   }}
-                  className="block w-full text-left px-3 py-2 text-base font-medium text-destructive hover:bg-muted"
                 >
                   Log out
-                </button>
+                </div>
               </>
             ) : (
               <>
-                <button
-                  onClick={() => {
-                    onLogin();
-                    setIsOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2 text-base font-medium text-foreground hover:bg-muted"
+                <Link
+                  href="/login"
+                  className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                  onClick={close}
                 >
-                  Log in
-                </button>
-                <button
-                  onClick={() => {
-                    onSignup();
-                    setIsOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2 text-base font-medium text-foreground hover:bg-muted"
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                  onClick={close}
                 >
-                  Sign up
-                </button>
+                  Sign Up
+                </Link>
               </>
             )}
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 };
 

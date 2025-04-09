@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -45,7 +44,6 @@ const relationshipOptions = [
   "Other",
 ];
 
-// Define validation schema
 const memberSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   relation: z.string().min(1, { message: "Please select a relation" }),
@@ -55,6 +53,7 @@ const memberSchema = z.object({
   phone: z.string().optional(),
   bio: z.string().optional(),
   profilePhoto: z.any().optional(),
+  memoryNotes: z.string().optional(),
 });
 
 type MemberFormValues = z.infer<typeof memberSchema>;
@@ -83,13 +82,13 @@ const FamilyMemberForm = ({
       email: initialValues.email || "",
       phone: initialValues.phone || "",
       bio: initialValues.bio || "",
+      memoryNotes: initialValues.memoryNotes || "",
     },
   });
 
   const handleSubmit = async (values: MemberFormValues) => {
     setIsLoading(true);
     try {
-      // Convert form data to FamilyMember object
       const memberData: Partial<FamilyMember> = {
         ...values,
         birthDate: values.birthDate ? values.birthDate.toISOString() : undefined,
@@ -331,6 +330,27 @@ const FamilyMemberForm = ({
               </FormControl>
               <FormDescription>
                 Write a brief biography or notable information.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="memoryNotes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Memory Reminder Notes (Private)</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Add personal memory notes about this family member" 
+                  className="resize-none min-h-[100px]" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormDescription>
+                These personal notes can help you remember details about this person. Only visible to you.
               </FormDescription>
               <FormMessage />
             </FormItem>
