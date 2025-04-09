@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -138,6 +137,10 @@ const TreeView = ({ isEditMode = false }: TreeViewProps) => {
     },
   });
 
+  const handleTreeUpdate = async (values: any) => {
+    await updateTreeMutation.mutateAsync(values);
+  };
+
   const handleAddMember = () => {
     setSelectedMember(null);
     setIsFormOpen(true);
@@ -164,10 +167,6 @@ const TreeView = ({ isEditMode = false }: TreeViewProps) => {
         treeId: id,
       });
     }
-  };
-
-  const handleTreeUpdate = async (values: any) => {
-    await updateTreeMutation.mutateAsync(values);
   };
 
   const isLoading = isTreeLoading || isMembersLoading;
@@ -240,9 +239,9 @@ const TreeView = ({ isEditMode = false }: TreeViewProps) => {
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Dashboard
               </Button>
-              <h1 className="text-xl font-bold ml-2">{tree.name}</h1>
+              <h1 className="text-xl font-bold ml-2">{tree?.name}</h1>
             </div>
-            {tree.description && (
+            {tree?.description && (
               <p className="text-muted-foreground">{tree.description}</p>
             )}
           </div>
@@ -263,7 +262,7 @@ const TreeView = ({ isEditMode = false }: TreeViewProps) => {
           </div>
         </div>
         
-        {tree.memoryNotes && (
+        {tree?.memoryNotes && (
           <div className="mb-6 p-4 bg-secondary/20 rounded-md">
             <h3 className="text-sm font-semibold mb-1">Your Memory Notes</h3>
             <p className="text-sm text-muted-foreground">{tree.memoryNotes}</p>
@@ -272,21 +271,23 @@ const TreeView = ({ isEditMode = false }: TreeViewProps) => {
 
         <div className="mb-8">
           <TreeVisualization
-            members={members}
+            members={members || []}
             onAddMember={handleAddMember}
             onSelectMember={setSelectedMember}
           />
         </div>
 
-        <FamilyMemberForm
-          isOpen={isFormOpen}
-          onClose={() => {
-            setIsFormOpen(false);
-            setSelectedMember(null);
-          }}
-          onSubmit={handleFormSubmit}
-          initialData={selectedMember}
-        />
+        {/* Form without isOpen prop to match component definition */}
+        {isFormOpen && (
+          <FamilyMemberForm
+            onClose={() => {
+              setIsFormOpen(false);
+              setSelectedMember(null);
+            }}
+            onSubmit={handleFormSubmit}
+            initialData={selectedMember}
+          />
+        )}
 
         {selectedMember && !isFormOpen && (
           <div className="mt-8">
