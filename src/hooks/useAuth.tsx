@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@/types/User';
 import { userApi } from '@/services/api';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -18,7 +18,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Logged in successfully!',
         description: 'Welcome back to Garbh.',
       });
-      router.push('/dashboard');
+      navigate('/dashboard');
     },
     onError: (error) => {
       toast({
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Account created!',
         description: 'Welcome to Garbh. Let\'s start building your family tree.',
       });
-      router.push('/dashboard');
+      navigate('/dashboard');
     },
     onError: (error) => {
       toast({
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       title: 'Logged out',
       description: 'You have been successfully logged out.',
     });
-    router.push('/');
+    navigate('/');
   };
 
   return (

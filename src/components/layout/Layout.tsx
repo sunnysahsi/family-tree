@@ -9,16 +9,11 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const { isAuthenticated, logout } = useAuth();
+  const { logout } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar 
-        isLoggedIn={isAuthenticated} 
-        onLogin={() => {}} // These will be handled by page components
-        onSignup={() => {}} // using modals rather than in the navbar
-        onLogout={logout}
-      />
+      <Navbar />
       
       <main className="flex-grow">
         {children}

@@ -9,12 +9,16 @@ interface FamilyMemberCardProps {
   member: FamilyMember;
   onClick?: () => void;
   isSelected?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const FamilyMemberCard = ({ 
   member, 
   onClick,
-  isSelected = false 
+  isSelected = false,
+  onEdit,
+  onDelete
 }: FamilyMemberCardProps) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;

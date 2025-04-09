@@ -1,441 +1,318 @@
 
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Edit,
-  Users,
-  Share2,
-  Globe,
-  Lock,
-  UserPlus,
-  Trash,
-  ChevronRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
-import { Separator } from "@/components/ui/separator";
-import TreeVisualization from "@/components/trees/TreeVisualization";
-import FamilyMemberForm from "@/components/trees/FamilyMemberForm";
-import FamilyMemberCard from "@/components/trees/FamilyMemberCard";
-import { FamilyTree } from "@/types/FamilyTree";
-import { FamilyMember } from "@/types/FamilyMember";
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Edit, Users, Share2, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import Layout from '@/components/layout/Layout';
+import { familyTreeApi, familyMemberApi } from '@/services/api';
+import { FamilyMember } from '@/types/FamilyMember';
+import TreeVisualization from '@/components/trees/TreeVisualization';
+import FamilyMemberForm from '@/components/trees/FamilyMemberForm';
+import FamilyMemberCard from '@/components/trees/FamilyMemberCard';
+import EditTreeForm from '@/components/trees/EditTreeForm';
 
-const TreeView = () => {
+interface TreeViewProps {
+  isEditMode?: boolean;
+}
+
+const TreeView = ({ isEditMode = false }: TreeViewProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [tree, setTree] = useState<FamilyTree | null>(null);
-  const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
-  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 
-  // Fetch tree data
-  useEffect(() => {
-    const fetchTreeData = async () => {
-      // In a real app, this would be an API call
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock tree data
-      const mockTree: FamilyTree = {
-        id: id || "1",
-        name: "Smith Family",
-        description: "My paternal family tree going back three generations",
-        isPublic: false,
-        ownerId: "user1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      // Mock members data
-      const mockMembers: FamilyMember[] = [
-        {
-          id: "1",
-          name: "John Smith",
-          relation: "Father",
-          birthDate: "1970-05-15",
-          email: "john@example.com",
-          phone: "+1234567890",
-          bio: "Born in New York, worked as an engineer for 30 years.",
-          treeId: id || "1",
-        },
-        {
-          id: "2",
-          name: "Mary Smith",
-          relation: "Mother",
-          birthDate: "1972-08-22",
-          email: "mary@example.com",
-          bio: "Grew up in Chicago, loves gardening and cooking.",
-          treeId: id || "1",
-        },
-        {
-          id: "3",
-          name: "James Smith",
-          relation: "Son",
-          birthDate: "1995-11-10",
-          email: "james@example.com",
-          treeId: id || "1",
-        },
-        {
-          id: "4",
-          name: "Emma Smith",
-          relation: "Daughter",
-          birthDate: "1998-02-28",
-          treeId: id || "1",
-        },
-      ];
-      
-      setTree(mockTree);
-      setMembers(mockMembers);
-      setIsLoading(false);
-    };
+  const { data: tree, isLoading: isTreeLoading } = useQuery({
+    queryKey: ['familyTree', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await familyTreeApi.getTreeById(id);
+      if (response.status === 'error' || !response.data) {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to load family tree',
+          variant: 'destructive',
+        });
+        return null;
+      }
+      return response.data;
+    },
+    enabled: !!id,
+  });
 
-    fetchTreeData();
-  }, [id]);
+  const { data: members = [], isLoading: isMembersLoading } = useQuery({
+    queryKey: ['treeMembers', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const response = await familyMemberApi.getMembersByTreeId(id);
+      if (response.status === 'error' || !response.data) {
+        return [];
+      }
+      return response.data;
+    },
+    enabled: !!id,
+  });
 
-  const handleAddMember = async (memberData: Partial<FamilyMember>) => {
-    // In a real app, this would be an API call
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Create a new member with mock data
-    const newMember: FamilyMember = {
-      id: `member-${Date.now()}`,
-      name: memberData.name || "",
-      relation: memberData.relation || "",
-      birthDate: memberData.birthDate,
-      deathDate: memberData.deathDate,
-      email: memberData.email,
-      phone: memberData.phone,
-      bio: memberData.bio,
-      profilePhotoUrl: memberData.profilePhotoUrl,
-      treeId: id || "1",
-    };
-    
-    setMembers(prevMembers => [...prevMembers, newMember]);
-    
-    toast({
-      title: "Family member added!",
-      description: `${newMember.name} has been added to your family tree.`,
-    });
-    
-    setIsAddMemberOpen(false);
+  const updateTreeMutation = useMutation({
+    mutationFn: (treeData: any) => 
+      familyTreeApi.updateTree(id || '', treeData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['familyTree', id] });
+      queryClient.invalidateQueries({ queryKey: ['familyTrees'] });
+      toast({
+        title: 'Tree updated',
+        description: 'Family tree has been updated successfully',
+      });
+      navigate(`/tree/${id}`);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update family tree',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: (newMember: Omit<FamilyMember, 'id'>) =>
+      familyMemberApi.createMember(newMember),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['treeMembers', id] });
+      setIsFormOpen(false);
+      setSelectedMember(null);
+      toast({
+        title: 'Success',
+        description: 'Family member added successfully',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add family member',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateMemberMutation = useMutation({
+    mutationFn: ({ id, member }: { id: string; member: Partial<FamilyMember> }) =>
+      familyMemberApi.updateMember(id, member),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['treeMembers', id] });
+      setIsFormOpen(false);
+      setSelectedMember(null);
+      toast({
+        title: 'Success',
+        description: 'Family member updated successfully',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update family member',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: (memberId: string) => familyMemberApi.deleteMember(memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['treeMembers', id] });
+      setSelectedMember(null);
+      toast({
+        title: 'Success',
+        description: 'Family member removed successfully',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to remove family member',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleAddMember = () => {
+    setSelectedMember(null);
+    setIsFormOpen(true);
   };
 
-  const handleDeleteMember = async (memberId: string) => {
-    if (confirm("Are you sure you want to delete this family member? This action cannot be undone.")) {
-      // In a real app, this would be an API call
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
-      
-      if (selectedMember?.id === memberId) {
-        setSelectedMember(null);
-      }
-      
-      toast({
-        title: "Family member deleted",
-        description: "The family member has been removed from your tree.",
+  const handleEditMember = (member: FamilyMember) => {
+    setSelectedMember(member);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteMember = (memberId: string) => {
+    deleteMemberMutation.mutate(memberId);
+  };
+
+  const handleFormSubmit = (memberData: Partial<FamilyMember>) => {
+    if (selectedMember) {
+      updateMemberMutation.mutate({
+        id: selectedMember.id,
+        member: memberData,
+      });
+    } else if (id) {
+      addMemberMutation.mutate({
+        ...memberData as Omit<FamilyMember, 'id'>,
+        treeId: id,
       });
     }
   };
 
-  const handleSelectMember = (member: FamilyMember) => {
-    setSelectedMember(member);
+  const handleTreeUpdate = (values: any) => {
+    updateTreeMutation.mutate(values);
   };
+
+  const isLoading = isTreeLoading || isMembersLoading;
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
+      <Layout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex justify-center items-center min-h-[500px]">
+          <div className="text-center">
+            <div className="h-16 w-16 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading family tree...</p>
+          </div>
         </div>
-        <div className="h-[600px] rounded-lg bg-muted animate-pulse" />
-      </div>
+      </Layout>
     );
   }
 
   if (!tree) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-16">
-          <h2 className="text-xl font-medium mb-2">Family tree not found</h2>
-          <p className="text-muted-foreground mb-6">
-            The family tree you're looking for doesn't exist or you don't have permission to view it.
-          </p>
-          <Button onClick={() => navigate("/dashboard")}>
-            Return to Dashboard
-          </Button>
+      <Layout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-16 bg-muted/30 rounded-lg">
+            <h2 className="text-xl font-medium mb-2">Family tree not found</h2>
+            <p className="text-muted-foreground mb-6">
+              The requested family tree could not be found or you do not have permission to view it.
+            </p>
+          </div>
         </div>
-      </div>
+      </Layout>
+    );
+  }
+
+  if (isEditMode) {
+    return (
+      <Layout>
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
+
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Edit Family Tree</h1>
+            <p className="text-muted-foreground">
+              Update your family tree information and memory reminder notes
+            </p>
+          </div>
+
+          <div className="bg-card border rounded-lg p-6">
+            <EditTreeForm 
+              tree={tree} 
+              onSubmit={handleTreeUpdate} 
+              isLoading={updateTreeMutation.isPending} 
+            />
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center mb-2">
-            <Button variant="ghost" size="sm" className="p-0 h-auto mr-2" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Dashboard
-            </Button>
-            <ChevronRight className="h-4 w-4 text-muted-foreground mx-1" />
-            <h1 className="text-xl font-bold">{tree.name}</h1>
-            <div className="ml-2 inline-flex items-center">
-              {tree.isPublic ? (
-                <div className="bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full flex items-center">
-                  <Globe className="h-3 w-3 mr-1" />
-                  Public
-                </div>
-              ) : (
-                <div className="bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full flex items-center">
-                  <Lock className="h-3 w-3 mr-1" />
-                  Private
-                </div>
-              )}
+    <Layout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center mb-2">
+              <Button variant="ghost" size="sm" className="p-0 h-auto mr-2" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Dashboard
+              </Button>
+              <h1 className="text-xl font-bold ml-2">{tree.name}</h1>
             </div>
+            {tree.description && (
+              <p className="text-muted-foreground">{tree.description}</p>
+            )}
           </div>
-          {tree.description && (
-            <p className="text-muted-foreground">{tree.description}</p>
-          )}
+          
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleAddMember}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Member
+            </Button>
+            <Button size="sm" variant="outline">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => navigate(`/tree/${id}/edit`)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Tree
+            </Button>
+          </div>
         </div>
         
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => setIsAddMemberOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Member
-          </Button>
-          <Button size="sm" variant="outline">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => navigate(`/tree/${id}/edit`)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Tree
-          </Button>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <TreeVisualization 
-            members={members} 
-            onAddMember={() => setIsAddMemberOpen(true)}
-            onSelectMember={handleSelectMember}
+        {tree.memoryNotes && (
+          <div className="mb-6 p-4 bg-secondary/20 rounded-md">
+            <h3 className="text-sm font-semibold mb-1">Your Memory Notes</h3>
+            <p className="text-sm text-muted-foreground">{tree.memoryNotes}</p>
+          </div>
+        )}
+
+        <div className="mb-8">
+          <TreeVisualization
+            members={members}
+            onAddMember={handleAddMember}
+            onSelectMember={setSelectedMember}
           />
         </div>
-        
-        <div>
-          <div className="bg-white rounded-lg shadow-sm border p-4">
-            <Tabs defaultValue="members">
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="members">
-                  <Users className="h-4 w-4 mr-2" />
-                  Members
-                </TabsTrigger>
-                <TabsTrigger value="details">
-                  <Users className="h-4 w-4 mr-2" />
-                  Details
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="members" className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium">Family Members ({members.length})</h3>
-                  <Button size="sm" variant="ghost" onClick={() => setIsAddMemberOpen(true)}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add
-                  </Button>
-                </div>
-                
-                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                  {members.map((member) => (
-                    <FamilyMemberCard
-                      key={member.id}
-                      member={member}
-                      onClick={() => handleSelectMember(member)}
-                      isSelected={selectedMember?.id === member.id}
-                    />
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="details">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium">Created</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(tree.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium">Last Updated</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(tree.updatedAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <Button variant="outline" size="sm" className="text-destructive border-destructive" onClick={() => {
-                      // Handle delete tree
-                      if (confirm("Are you sure you want to delete this family tree? This action cannot be undone.")) {
-                        // In a real app, this would be an API call
-                        toast({
-                          title: "Family tree deleted",
-                          description: "Your family tree has been deleted successfully.",
-                        });
-                        navigate("/dashboard");
-                      }
-                    }}>
-                      <Trash className="h-4 w-4 mr-2" />
-                      Delete Tree
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </div>
-      
-      {/* Selected Member Details Sheet */}
-      {selectedMember && (
-        <Sheet 
-          open={!!selectedMember}
-          onOpenChange={(open) => {
-            if (!open) setSelectedMember(null);
+
+        <FamilyMemberForm
+          isOpen={isFormOpen}
+          onClose={() => {
+            setIsFormOpen(false);
+            setSelectedMember(null);
           }}
-        >
-          <SheetContent className="sm:max-w-md overflow-y-auto">
-            <SheetHeader className="mb-6">
-              <SheetTitle>Member Details</SheetTitle>
-            </SheetHeader>
-            
-            <div className="space-y-6">
-              <div className="flex items-center">
-                <div className="w-20 h-20 rounded-full overflow-hidden bg-muted mr-4 flex-shrink-0">
-                  {selectedMember.profilePhotoUrl ? (
-                    <img
-                      src={selectedMember.profilePhotoUrl}
-                      alt={selectedMember.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Users className="h-10 w-10 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">{selectedMember.name}</h2>
-                  <div className="text-sm text-muted-foreground bg-accent inline-block px-2 py-0.5 rounded-full">
-                    {selectedMember.relation}
-                  </div>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                {selectedMember.birthDate && (
-                  <div>
-                    <h3 className="text-sm font-medium">Birth Date</h3>
-                    <p>{new Date(selectedMember.birthDate).toLocaleDateString()}</p>
-                  </div>
-                )}
-                
-                {selectedMember.deathDate && (
-                  <div>
-                    <h3 className="text-sm font-medium">Death Date</h3>
-                    <p>{new Date(selectedMember.deathDate).toLocaleDateString()}</p>
-                  </div>
-                )}
-                
-                {selectedMember.email && (
-                  <div>
-                    <h3 className="text-sm font-medium">Email</h3>
-                    <p>{selectedMember.email}</p>
-                  </div>
-                )}
-                
-                {selectedMember.phone && (
-                  <div>
-                    <h3 className="text-sm font-medium">Phone</h3>
-                    <p>{selectedMember.phone}</p>
-                  </div>
-                )}
-              </div>
-              
-              {selectedMember.bio && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">Biography</h3>
-                    <p className="text-sm whitespace-pre-line">{selectedMember.bio}</p>
-                  </div>
-                </>
-              )}
-              
-              <div className="flex justify-between pt-4">
-                <Button variant="outline" size="sm" onClick={() => {
-                  // In a real app, you would open an edit form
-                  toast({
-                    title: "Edit member",
-                    description: "Editing functionality would be implemented in a real app.",
-                  });
-                }}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-destructive border-destructive"
-                  onClick={() => handleDeleteMember(selectedMember.id)}
-                >
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </div>
+          onSubmit={handleFormSubmit}
+          initialData={selectedMember}
+        />
+
+        {selectedMember && !isFormOpen && (
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold">Selected Family Member</h2>
+              <Button variant="outline" size="sm" onClick={() => handleEditMember(selectedMember)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Member
+              </Button>
             </div>
-          </SheetContent>
-        </Sheet>
-      )}
-      
-      {/* Add Member Sheet */}
-      <Sheet
-        open={isAddMemberOpen}
-        onOpenChange={setIsAddMemberOpen}
-      >
-        <SheetContent className="sm:max-w-md overflow-y-auto">
-          <SheetHeader className="mb-6">
-            <SheetTitle>Add Family Member</SheetTitle>
-          </SheetHeader>
-          
-          <FamilyMemberForm onSubmit={handleAddMember} />
-        </SheetContent>
-      </Sheet>
-    </div>
+            <FamilyMemberCard
+              member={selectedMember}
+              onEdit={() => handleEditMember(selectedMember)}
+              onDelete={() => handleDeleteMember(selectedMember.id)}
+            />
+            
+            {selectedMember.memoryNotes && (
+              <div className="mt-4 p-4 bg-secondary/20 rounded-md">
+                <h3 className="text-sm font-semibold mb-1">Your Memory Notes</h3>
+                <p className="text-sm text-muted-foreground">{selectedMember.memoryNotes}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 };
 

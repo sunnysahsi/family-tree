@@ -13,12 +13,13 @@ import {
   Panel,
   NodeTypes,
   MarkerType,
+  Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { FamilyMember } from '@/types/FamilyMember';
 import PersonNode from './PersonNode';
-import { User, ZoomIn, ZoomOut, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 // Define our custom node types
 const nodeTypes: NodeTypes = {
@@ -103,7 +104,7 @@ const TreeVisualization = ({ members, onAddMember, onSelectMember }: TreeVisuali
     setEdges(newEdges);
   });
 
-  const handleNodeClick = (_event: React.MouseEvent, node: any) => {
+  const handleNodeClick = (_event: React.MouseEvent, node: Node) => {
     const member = members.find(m => m.id === node.id);
     if (member) {
       onSelectMember(member);
@@ -136,19 +137,22 @@ const TreeVisualization = ({ members, onAddMember, onSelectMember }: TreeVisuali
         <MiniMap
           nodeStrokeWidth={3}
           nodeColor={(node) => {
-            const nodeData = node.data as FamilyMember;
-            switch (nodeData.relation) {
-              case 'Father':
-              case 'Mother':
-                return '#A8D5BA';
-              case 'Son':
-              case 'Daughter':
-                return '#FFD6C4';
-              case 'Spouse':
-                return '#FFDEE2';
-              default:
-                return '#E5DEFF';
+            if (node.data) {
+              const nodeData = node.data as FamilyMember;
+              switch (nodeData.relation) {
+                case 'Father':
+                case 'Mother':
+                  return '#A8D5BA';
+                case 'Son':
+                case 'Daughter':
+                  return '#FFD6C4';
+                case 'Spouse':
+                  return '#FFDEE2';
+                default:
+                  return '#E5DEFF';
+              }
             }
+            return '#E5DEFF';
           }}
         />
         <Panel position="top-right" className="bg-white rounded-lg shadow-sm border p-2">

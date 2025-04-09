@@ -1,7 +1,6 @@
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/router";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Book,
   Menu,
@@ -25,13 +24,13 @@ import { useMobileMenu } from "@/hooks/use-mobile";
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const { isOpen, toggle, close } = useMobileMenu();
-  const router = useRouter();
+  const navigate = useNavigate();
   
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
+          <Link to="/" className="mr-6 flex items-center space-x-2">
             <Book className="h-5 w-5" />
             <span className="hidden font-bold sm:inline-block">
               Garbh
@@ -41,10 +40,10 @@ const Navbar = () => {
             {isAuthenticated && (
               <nav className="flex items-center space-x-6 text-sm font-medium">
                 <Link
-                  href="/dashboard"
+                  to="/dashboard"
                   className={cn(
                     "transition-colors hover:text-foreground/80",
-                    router.pathname === "/dashboard"
+                    location.pathname === "/dashboard"
                       ? "text-foreground"
                       : "text-foreground/60"
                   )}
@@ -82,7 +81,7 @@ const Navbar = () => {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile/edit" className="cursor-pointer">
+                  <Link to="/profile/edit" className="cursor-pointer flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Edit Profile</span>
                   </Link>
@@ -99,10 +98,10 @@ const Navbar = () => {
             </DropdownMenu>
           ) : (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => router.push("/login")}>
+              <Button variant="outline" onClick={() => navigate("/login")}>
                 Log In
               </Button>
-              <Button onClick={() => router.push("/signup")}>
+              <Button onClick={() => navigate("/signup")}>
                 Sign Up
               </Button>
             </div>
@@ -129,21 +128,21 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <Link
-                  href="/dashboard"
+                  to="/dashboard"
                   className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
                   onClick={close}
                 >
                   Dashboard
                 </Link>
                 <Link
-                  href="/profile/edit"
+                  to="/profile/edit"
                   className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
                   onClick={close}
                 >
                   Edit Profile
                 </Link>
                 <div
-                  className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent text-destructive"
+                  className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent text-destructive cursor-pointer"
                   onClick={() => {
                     logout();
                     close();
@@ -155,14 +154,14 @@ const Navbar = () => {
             ) : (
               <>
                 <Link
-                  href="/login"
+                  to="/login"
                   className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
                   onClick={close}
                 >
                   Log In
                 </Link>
                 <Link
-                  href="/signup"
+                  to="/signup"
                   className="block w-full rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
                   onClick={close}
                 >

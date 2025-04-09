@@ -1,5 +1,5 @@
 
-import Link from "next/link";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Lock, Globe, MoreVertical, Edit, Trash } from "lucide-react";
@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FamilyTree } from "@/types/FamilyTree";
-import { useRouter } from "next/router";
 
 interface FamilyTreeCardProps {
   tree: FamilyTree;
@@ -19,14 +18,14 @@ interface FamilyTreeCardProps {
 }
 
 const FamilyTreeCard = ({ tree, onDelete }: FamilyTreeCardProps) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   
   const handleView = () => {
-    router.push(`/tree/${tree.id}`);
+    navigate(`/tree/${tree.id}`);
   };
 
   const handleEdit = () => {
-    router.push(`/tree/${tree.id}/edit`);
+    navigate(`/tree/${tree.id}/edit`);
   };
 
   const handleDelete = async () => {
