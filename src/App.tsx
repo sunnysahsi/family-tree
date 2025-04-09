@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
+import Navbar from "@/components/layout/Navbar";
 import LandingPage from "@/pages/LandingPage";
 import Dashboard from "@/pages/dashboard";
 import TreeView from "@/pages/TreeView";
@@ -23,6 +24,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <Navbar />
             <Layout>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
