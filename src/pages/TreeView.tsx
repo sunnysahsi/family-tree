@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -270,11 +269,11 @@ const TreeView = ({ isEditMode = false }: TreeViewProps) => {
         />
       </div>
 
-      {/* Modified to remove isOpen prop since the component doesn't expect it */}
       {isFormOpen && (
         <FamilyMemberForm
-          initialData={selectedMember}
+          initialValues={selectedMember || {}}
           onSubmit={handleFormSubmit}
+          buttonText={selectedMember ? "Update Member" : "Add Member"}
         />
       )}
 

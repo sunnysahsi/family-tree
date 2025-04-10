@@ -138,7 +138,7 @@ const TreeVisualization = ({ members, onAddMember, onSelectMember }: TreeVisuali
           nodeStrokeWidth={3}
           nodeColor={(node) => {
             if (node.data) {
-              // Fix the type conversion issue with a proper type guard and type assertion
+              // Safe type assertion with explicit casting
               const nodeData = node.data as FamilyMember;
               
               switch (nodeData.relation) {
