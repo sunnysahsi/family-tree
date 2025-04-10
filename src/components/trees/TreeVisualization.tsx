@@ -138,20 +138,23 @@ const TreeVisualization = ({ members, onAddMember, onSelectMember }: TreeVisuali
           nodeStrokeWidth={3}
           nodeColor={(node) => {
             if (node.data) {
-              // Safe type assertion with explicit casting
-              const nodeData = node.data as FamilyMember;
+              // First convert to unknown, then cast to FamilyMember to avoid TypeScript error
+              const nodeData = (node.data as unknown) as FamilyMember;
               
-              switch (nodeData.relation) {
-                case 'Father':
-                case 'Mother':
-                  return '#A8D5BA';
-                case 'Son':
-                case 'Daughter':
-                  return '#FFD6C4';
-                case 'Spouse':
-                  return '#FFDEE2';
-                default:
-                  return '#E5DEFF';
+              // Verify that the required fields exist before using them
+              if (nodeData && typeof nodeData.relation === 'string') {
+                switch (nodeData.relation) {
+                  case 'Father':
+                  case 'Mother':
+                    return '#A8D5BA';
+                  case 'Son':
+                  case 'Daughter':
+                    return '#FFD6C4';
+                  case 'Spouse':
+                    return '#FFDEE2';
+                  default:
+                    return '#E5DEFF';
+                }
               }
             }
             return '#E5DEFF';
