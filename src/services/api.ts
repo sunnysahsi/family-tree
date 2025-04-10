@@ -5,17 +5,31 @@ import { FamilyMember } from '@/types/FamilyMember';
 import { User } from '@/types/User';
 
 // Base API URL - would be set from environment variables in a real app
-const API_URL = '/api';
+const API_URL = 'http://localhost:5000/api';
+
+// Helper to get the auth token from local storage
+const getAuthToken = () => {
+  const user = localStorage.getItem('user');
+  return user ? `Bearer ${JSON.parse(user).token}` : '';
+};
 
 // Generic fetch function with error handling
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
   try {
+    // Add auth token to headers if available
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    };
+    
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = token;
+    }
+
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     });
 
     const data = await response.json();
@@ -28,7 +42,7 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<Api
     }
 
     return {
-      data: data as T,
+      data: data.data,
       status: 'success',
     };
   } catch (error) {
@@ -53,11 +67,10 @@ export const userApi = {
       body: JSON.stringify({ name, email, password }),
     }),
   
-  getCurrentUser: () => fetchApi<User>('/users/me'),
+  getCurrentUser: () => fetchApi<User>('/auth/me'),
   
-  // New function to update user profile
   updateProfile: (userData: Partial<User>) =>
-    fetchApi<User>('/users/me', {
+    fetchApi<User>('/auth/me', {
       method: 'PATCH',
       body: JSON.stringify(userData),
     }),
